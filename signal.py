@@ -1,4 +1,5 @@
 from math import sin, cos, pi, hypot, atan2
+from statistics import mean
 
 from helper import random_or, fit_range
 
@@ -33,7 +34,7 @@ def fourier_spectrum(signal_values):
 
 
 def random_signal(harmonic_index, N, B1, B2, sum_range=range(50, 71)):
-    assert B1 >= B2
+    assert B1 <= B2
 
     def sine(i, j=1):
         return sin((2 * pi * i * j) / N)
@@ -44,14 +45,14 @@ def random_signal(harmonic_index, N, B1, B2, sum_range=range(50, 71)):
 def moving_averaged_antialiasing(values, window):
     offset = (window - 1) // 2
     values_range = range(len(values))
-    safe_val = lambda i: values(fit_range(i, values_range))
-    return [safe_val(j) for i in values_range for j in range(i - offset, i + offset)]
+    safe_val = lambda i: values[fit_range(i, values_range)]
+    return [mean(safe_val(i) for i in range(j - offset, j + offset)) for j in values_range]
 
 
 def fourth_degree_parabola_antialiasing(values):
     mul = 1 / 231
     values_range = range(len(values))
-    safe_val = lambda i: values(fit_range(i, values_range))
+    safe_val = lambda i: values[fit_range(i, values_range)]
 
     def antialiased(i):
         return mul * (5 * safe_val(i - 3) -
@@ -70,8 +71,7 @@ def moving_median_antialiasing(values, window):
     values_range = range(len(values))
 
     def antialiased(i):
-        window_values = [values[j] for j in range(fit_range(i - offset, values_range),
-                                                  fit_range(i + offset, values_range))]
-        return sorted(window_values[offset])
+        window_values = [values[fit_range(j, values_range)] for j in range(i - offset, i + offset)]
+        return sorted(window_values)[offset]
 
     return [antialiased(i) for i in values_range]
